@@ -23,5 +23,21 @@ function GetEmail(object $pdo, string $email) : array|false {
 	return $result;
 }
 
+function set_user(object $pdo, string $pwd, string $username, string $email) : void {
+	$query = "INSERT INTO users (username, email, pwd) VALUES (:username, :email, :pwd);";
+	$statement = $pdo->prepare($query);
+	$options = [
+		"cost" => 12
+	];
+
+	$hashedPassword = password_hash($pwd, PASSWORD_BCRYPT, $options); 
+
+	$statement->bindParam(":username", $username);
+	$statement->bindParam(":email", $email);
+	$statement->bindParam(":pwd", $hashedPassword);
+	$statement->execute();
+	
+}
+
 
 

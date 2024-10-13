@@ -1,6 +1,6 @@
 <?php
 $host = "localhost";
-$dbname = "myfirstdatabase";
+$dbname = "Linux_Lab";
 $dbusername = "root";
 $dbpassword = "";
 

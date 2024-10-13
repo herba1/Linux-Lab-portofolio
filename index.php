@@ -1,6 +1,7 @@
 <?php 
 require_once "includes/config_session.inc.php";
 require_once "includes/signup_view.inc.php";
+require_once "includes/login_view.inc.php";
 ?>
 
 <!DOCTYPE html>
@@ -11,27 +12,28 @@ require_once "includes/signup_view.inc.php";
 </head>
 <body>
   <h3>Log In </h3>
-  <div id = "login-form"> 
     <form action="includes/login.inc.php" method="post">
         <input type="text" name="username" placeholder="Username">
-        <input type="password" name="password" placeholder="Password">
-        <button type="submit">Login</button>
+        <input type="password" name="pwd" placeholder="Password">
+        <button>Login</button>
     </form>
-  </div>
+    <?php 
+        check_login_errors();
+    ?>
   
 <h3>Sign Up</h3>
-  <div id = "signup-form"> 
     <form action="includes/signup.inc.php" method="post">
-        <input type="text" name="name" placeholder="Name">
         <input type="text" name="username" placeholder="Username">
-        <input type="email" name="email" placeholder="E-Mail">
-        <input type="password" name="password" placeholder="Password">
-        <input type="password" name="repeat password" placeholder="Repeat Password">
-        <button>Sign Up</button>
+        <input type="text" name="email" placeholder="E-Mail">
+        <input type="password" name="pwd" placeholder="Password">
+        <button>Signup</button>
     </form>
 	<?php 
 		check_signup_errors();
 	?>
-  </div>
+<h3>Forgot Password?</h3>
+    <form action="includes/reset_info.inc.php" method="post">
+        <button>Reset Password</button>
+        </form>
     </body>
 </html>

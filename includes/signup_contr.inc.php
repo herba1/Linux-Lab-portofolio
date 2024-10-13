@@ -1,10 +1,9 @@
 <?php 
-
 //type declaration, if an int is declared an int, it cannot be converted 
 declare(strict_types=1);
 
-function is_input_empty(string $username, string $password, string $email) : bool {
-	if (empty($username) || empty($password) || empty($email)) {
+function is_input_empty(string $username, string $pwd, string $email) : bool {
+	if (empty($username) || empty($pwd) || empty($email)) {
 		 return true;
 	}
 	else return false;
@@ -26,8 +25,39 @@ function username_is_taken(object $pdo, string $username) : bool {
 }
 
 function email_is_registered(object $pdo, string $email) : bool {
-	if (GetEmail($pdo, $email) {
+	if (GetEmail($pdo, $email)) {
 		return true;
 	}
 	else return false;
 }
+
+function is_passsword_valid (string $pwd) : bool {
+	if (strlen($pwd) > 10) {
+		return false;
+	}
+// Check for at least one uppercase letter
+	if (!preg_match('/[A-Z]/', $pwd)) {
+		return false;
+	}
+
+// Check for at least one lowercase letter
+	if (!preg_match('/[a-z]/', $pwd)) {
+		return false;
+	}
+
+// Check for at least one digit
+	if (!preg_match('/\d/', $pwd)) {
+		return false;
+	}
+
+// Check for at least one special character
+	if (!preg_match('/[\W_]/', $pwd)) {
+		return false;
+	}
+else return true;
+}
+
+function create_user(object $pdo, string $pwd, string $username, string $email) : void {
+	set_user($pdo, $pwd, $username, $email);
+}
+
