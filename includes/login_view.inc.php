@@ -8,12 +8,12 @@ function check_login_errors() : void {
         echo "<br>";
 
         foreach ($errors as $error) {
-            echo '<p class="form-error">' . $error . '</p>';
+            echo '<p style="color: red;">' . $error . '</p>';
         }
         unset($_SESSION["errors_login"]);
     }
     else if (isset($_GET['login']) && $_GET['login'] === "success") {
         echo "<br>";
-        echo '<p class="form-success">Login success!</p>'; 
+        echo '<p style="color: green;">' . "Login Success!" . '</p>';
     }
 }

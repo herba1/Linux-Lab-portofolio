@@ -1,6 +1,6 @@
 <?php
     require_once "config_session.inc.php";
-    require_once "reset_password_view.inc.php"
+    require_once "reset_password_view.inc.php";
 ?>
 
 <!DOCTYPE html>
@@ -15,7 +15,7 @@
     <h3>Reset Password</h3>
     <form action="reset_password.inc.php" method="POST" >
         <input type="text" name="email" placeholder="E-Mail">
-        <button>E-Mail</button>
+        <button>Send Email</button>
     </form>
     <?php
         check_reset_password_errors();
