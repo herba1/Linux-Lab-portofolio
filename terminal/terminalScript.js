@@ -2,6 +2,7 @@ const terminal = document.querySelector('.terminal');
 const command_line = document.querySelector('.command-line');
 const command = document.querySelector('.input');
 const history = document.querySelector('.history');
+let currentDirectory = "/"; // Track current directory in JS
 
 terminal.addEventListener('click',()=>{
    command_line.focus();
@@ -23,48 +24,66 @@ function specialKeys(){
     console.log(`special key used`);
     return;
 }
-
 function enter(){
-    if(temp === commandHistory.at(commandHistory.length-2) || temp === ""){
-        // do not push to array but execute command
+    let commandToSend = temp.trim(); // Make sure we send trimmed command
+  //  console.log("Sending command: ", commandToSend);
+    if (commandToSend === commandHistory.at(commandHistory.length-2) || commandToSend === ""){
         commandHistory[commandHistoryIndex] = commandHistoryClean[commandHistoryIndex];
-        output(temp);
         temp = "";
         commandHistoryIndex = commandHistory.length-1;
-        console.log(commandHistory);
-
-    }
-    else{
-        commandHistoryClean[commandHistoryClean.length-1] = temp;
+    } else {
+        commandHistoryClean[commandHistoryClean.length-1] = commandToSend;
         commandHistoryClean.push("");
-        commandHistory[commandHistory.length-1] = temp;
+        commandHistory[commandHistory.length-1] = commandToSend;
         commandHistory.push("");
         commandHistory[commandHistoryIndex] = commandHistoryClean[commandHistoryIndex];
-        output(temp);
         temp = "";
         commandHistoryIndex = commandHistory.length-1;
-        console.log(commandHistory);
-
     }
+    // Send the command to the PHP backendi
+    fetch('../api_commands.php', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: `command=${encodeURIComponent(commandToSend)}`,
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log("Server response:", data);
+        output(commandToSend, data.output);
+        updatePrompt(data.currentDirectory);
+        temp = "";
+        caretPos = 0;
+        renderCaret();
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
 }
 
-function output(command){
+function output(command, result) {
     const prevCommand = document.createElement("div");
     const prevOutput = document.createElement("div")
 
     prevCommand.classList.toggle("history-command");
     prevOutput.classList.toggle("history-output");
 
-    const prompt = `<span class="prompt">$</span>`
+    const prompt = `<span class="prompt">example_user@LinuxLab:${currentDirectory}$</span>`;
 
     prevCommand.innerHTML= prompt + `${command}`;
-    prevOutput.innerText = `shl: command not found: ${command}`;
+    prevOutput.innerText = result;
 
     history.appendChild(prevCommand);
     history.appendChild(prevOutput);
+    terminal.scrollTop = terminal.scrollHeight;
 }
-
-
+function updatePrompt(newDirectory) {
+    currentDirectory = newDirectory; // Update JS directory
+    // Update visible prompt in command line
+    document.querySelector('.command-line .prompt').textContent = 
+        `example_user@LinuxLab:${currentDirectory}$`;
+}
 
 function arrowUp(){
     if(commandHistory.length==0 || commandHistoryIndex==0)return;
