@@ -1,0 +1,44 @@
+@import '../normalize.css';
+
+.terminal {
+    background-color: black;
+    height: 30rem;
+    width: 43rem;
+    font-family: monospace;
+    font-size: 1rem;
+    color: rgb(255, 255, 255);
+    border-radius: 10px;
+    padding: 10px;
+    overflow: auto;
+}
+
+.command-line{
+    word-break: break-all;
+    outline: none;
+    caret-color: transparent;
+
+}
+
+.prompt {
+    color: lime; 
+}
+
+.caret-block {
+    background-color: white;
+    color: black;
+    animation: blink 2s steps(1,end) infinite;
+    animation-delay: 0.5s;
+}
+
+@keyframes blink {
+    0%, 50%{
+        /* opacity: 1; */
+        background-color: white;
+        color: black;
+    }
+    25%, 75%{
+        /* opacity: 0; */
+        background-color: transparent;
+        color: white;
+    }
+}
