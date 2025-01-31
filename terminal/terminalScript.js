@@ -40,7 +40,7 @@ function enter(){
         temp = "";
         commandHistoryIndex = commandHistory.length-1;
     }
-    // Send the command to the PHP backendi
+    // Send the command to the PHP backend "the post request"
     fetch('../api_commands.php', {
         method: 'POST',
         headers: {

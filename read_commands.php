@@ -1,4 +1,6 @@
 <?php
+//session start but safely
+require_once 'includes/config_session.inc.php';
 // Simulated file system
 $fileSystem = [
     "/" => [
