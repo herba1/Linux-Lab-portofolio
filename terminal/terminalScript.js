@@ -25,6 +25,7 @@ function specialKeys(){
     return;
 }
 function enter(){
+    let actualPrevCommand = temp;
     let commandToSend = temp.trim(); // Make sure we send trimmed command
   //  console.log("Sending command: ", commandToSend);
     if (commandToSend === commandHistory.at(commandHistory.length-2) || commandToSend === ""){
@@ -51,7 +52,7 @@ function enter(){
     .then(response => response.json())
     .then(data => {
         console.log("Server response:", data);
-        output(commandToSend, data.output);
+        output(actualPrevCommand, data.output);
         updatePrompt(data.currentDirectory);
         temp = "";
         caretPos = 0;
@@ -63,6 +64,8 @@ function enter(){
 }
 
 function output(command, result) {
+    // make this is result === clear
+    if(command == "clear"){clear(); return;}
     const prevCommand = document.createElement("div");
     const prevOutput = document.createElement("div")
 
@@ -71,13 +74,20 @@ function output(command, result) {
 
     const prompt = `<span class="prompt">example_user@LinuxLab:${currentDirectory}$</span>`;
 
-    prevCommand.innerHTML= prompt + `${command}`;
+    const actualPrevCommand = command.replace(/ /g, '&nbsp')
+
+    prevCommand.innerHTML= prompt + `${actualPrevCommand}`;
     prevOutput.innerText = result;
 
     history.appendChild(prevCommand);
-    history.appendChild(prevOutput);
+    // if blank no newline
+    if(command){history.appendChild(prevOutput);}
     terminal.scrollTop = terminal.scrollHeight;
 }
+
+function clear() {history.replaceChildren();}
+
+
 function updatePrompt(newDirectory) {
     currentDirectory = newDirectory; // Update JS directory
     // Update visible prompt in command line
@@ -198,15 +208,14 @@ function renderCaret(){
             console.log(`tempLength:${temp.length}\ncaretPos: ${caretPos}`)
             cursor = `<span class="caret-block">${char}</span>`;
     }
-    // temp.at(caretPos) = `[]`
     inputLeft = temp.slice(0,caretPos);
     inputRight= temp.slice(caretPos+1,temp.length);
 
-    // console.log(`left: ${inputLeft}`);
-    // console.log(`right: ${inputRight}`);
     
-    command.innerHTML= inputLeft+cursor+inputRight;
-    // console.log(command.innerHTML);
-    // console.log(command.innerText);
+    const displayLeft = inputLeft.replace(/ /g, '&nbsp;');
+    const displayRight = inputRight.replace(/ /g, '&nbsp;');
+    
+    cursor = `<span class="caret-block">${char}</span>`;
+    command.innerHTML= displayLeft+cursor+displayRight;
 
 }
