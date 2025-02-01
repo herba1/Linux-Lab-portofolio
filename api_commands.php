@@ -94,12 +94,46 @@ function process_cd(&$currentDirectory, $fileSystem, $dir): string  {
                 $currentDirectory = "/";
             }
         }
-    } else {
+        return "";
+    }  
+        
+    $targetPath = trim($dir, "/");
+    $pathParts = explode("/", $targetPath);
+
+    // Handle the chaining of cd, ex: cd Documents/Subfolder/temp
+     if (count($pathParts) > 1) {
+        // Start from the root if it's an absolute path, otherwise start from the current directory
+        $newDirectory = (substr($dir, 0, 1) === "/") ? "/" : rtrim($currentDirectory, "/");
+        // Split current directory into parts
+        $path = array_filter(explode("/", trim($newDirectory, "/")), 'strlen');
+        // Start from the root of the file system
+        $currentLevel = $fileSystem["/"]; //basically initialzing to zero
+        // Traverse the file system to the current directory
+        foreach ($path as $part) {
+            if (!isset($currentLevel[$part]) || !is_array($currentLevel[$part])) {
+                return "Error: Invalid directory path.\n";
+            }
+            $currentLevel = &$currentLevel[$part];
+        }
+        
+        //for every directory in the path
+        foreach ($pathParts as $part) {
+                // Check if the directory exists
+                if (!isset($currentLevel[$part]) || !is_array($currentLevel[$part])) {
+                    return "Error: Directory '$part' not found.\n";
+                }
+                $currentLevel = &$currentLevel[$part];
+                $newDirectory = rtrim($newDirectory, "/") . "/" . $part;
+            }
+        // Update the current directory
+        $currentDirectory = $newDirectory;    
+    }
+    else {
         $path = array_filter(explode("/", trim($currentDirectory, "/")), 'strlen');
         $currentLevel = $fileSystem["/"];
         foreach ($path as $part) {
             if (!isset($currentLevel[$part])) {
-                return "Error: Directory not found.\n";
+                return "";
             }
             $currentLevel = $currentLevel[$part];
         }
@@ -113,29 +147,22 @@ function process_cd(&$currentDirectory, $fileSystem, $dir): string  {
 function process_pwd($currentDirectory) : string {
     return $currentDirectory . "\n";
 }
-function process_mkdir(&$fileSystem, $currentDirectory, $newdir): void {
+function process_mkdir(&$fileSystem, $currentDirectory, $newdir): string {
     // Traverse to the current directory in the file system
     $path = array_filter(explode("/", trim($currentDirectory, "/")), 'strlen');
     $currentLevel = &$fileSystem["/"]; // Start from root
 
     // Traverse the path to reach the current directory
     foreach ($path as $part) {
-        if (!isset($currentLevel[$part])) {
-            echo "Error: Directory not found.\n";
-            return;
-        }
         $currentLevel = &$currentLevel[$part];
-    }
-
     // Check if the directory already exists
     if (isset($currentLevel[$newdir])) {
-        echo "Directory already exists: $newdir\n";
-        return;
+        return "Directory already exists: $newdir\n";
+        }
     }
-
     // Create the new directory
     $currentLevel[$newdir] = [];
-    echo "Directory '$newdir' created\n";
+    return $newdir . "\n";
 }
 function process_cat(&$filesystem, $currentDirectory, $file): string {
     $currentDirectory = rtrim($currentDirectory, "/");
@@ -156,13 +183,42 @@ function process_cat(&$filesystem, $currentDirectory, $file): string {
     return ($currentLevel[$file] ?? "[Empty File]") . "\n";
 }
 
+function process_mv(&$filesystem, $currentDirectory, $oldname, $newname): string {
+    // Traverse to current directory
+    $pathParts = array_filter(explode("/", rtrim($currentDirectory, "/")), 'strlen');
+    $currentLevel = &$filesystem["/"];
+    
+    foreach ($pathParts as $part) {
+        if (!isset($currentLevel[$part]) || !is_array($currentLevel[$part])) {
+            return "Error: Invalid path\n";
+        }
+        $currentLevel = &$currentLevel[$part];
+    }
+
+    // Validate old item exists
+    if (!isset($currentLevel[$oldname])) {
+        return "Error: '$oldname' not found\n";
+    }
+
+    // Validate new name doesn't exist
+    if (isset($currentLevel[$newname])) {
+        return "Error: '$newname' already exists\n";
+    }
+
+    // Perform rename
+    $currentLevel[$newname] = $currentLevel[$oldname];
+    unset($currentLevel[$oldname]);
+    return "";    
+}
+
 // Handle the command
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $command = $_POST['command'] ?? '';
-    $args = explode(" ", $command, 2);
+    $command = trim($_POST['command'] ?? '');
+    $args = preg_split('/\s+/', $command); // Split by whitespac
+    
     $cmd = $args[0] ?? '';
     $arg = $args[1] ?? '';
-
+    $arg2 = $args[2] ?? '';
     $output = "";
     switch ($cmd) {
         case 'ls':
@@ -176,6 +232,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             break;
         case 'pwd';
             $output = process_pwd($_SESSION['currentDirectory']);
+            break;
+        case 'mkdir';
+            $output = process_mkdir($_SESSION['fileSystem'], $_SESSION['currentDirectory'], $arg);
+            break;
+        case 'mv';
+            $output = process_mv($_SESSION['fileSystem'], $_SESSION['currentDirectory'], $arg, $arg2);
             break;
         default:
             $output = "Command not recognized: $cmd\n";
