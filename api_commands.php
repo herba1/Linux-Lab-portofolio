@@ -182,96 +182,72 @@ function process_cat(&$filesystem, $currentDirectory, $file): string {
     }
     return ($currentLevel[$file] ?? "[Empty File]") . "\n";
 }
-
 function process_mv(&$filesystem, $currentDirectory, $oldname, $newname): string {
-    // Helper function to resolve the target directory and name from the newname
-    $resolveNewnamePath = function ($currentDir, $newname) {
-        $isAbsolute = substr($newname, 0, 1) === '/';
-        $pathParts = array_filter(explode('/', $newname), function($part) {
-            return $part !== '';
-        });
-        $currentParts = $isAbsolute ? [] : array_filter(explode('/', trim($currentDir, '/')), 'strlen');
-        
-        foreach ($pathParts as $part) {
+    // Helper to resolve absolute paths
+    $resolvePath = function ($baseDir, $path) {
+        $isAbsolute = (substr($path, 0, 1) === '/');
+        $parts = $isAbsolute ? [] : explode('/', trim($baseDir, '/'));
+        foreach (explode('/', $path) as $part) {
             if ($part === '..') {
-                if (!empty($currentParts)) {
-                    array_pop($currentParts);
-                }
-            } elseif ($part !== '.') {
-                $currentParts[] = $part;
+                if (!empty($parts)) array_pop($parts);
+            } elseif ($part !== '.' && $part !== '') {
+                $parts[] = $part;
             }
         }
-        
-        if (empty($currentParts)) {
-            $targetDir = '/';
-            $targetName = '';
-        } else {
-            $targetName = array_pop($currentParts);
-            $targetDir = '/' . implode('/', $currentParts);
-        }
-        return [$targetDir, $targetName];
+        return '/' . implode('/', $parts);
     };
 
-    // Navigate to the current directory
-    $pathParts = array_filter(explode('/', trim($currentDirectory, '/')), 'strlen');
-    $currentLevel = &$filesystem['/'];
-    foreach ($pathParts as $part) {
-        if (!isset($currentLevel[$part]) || !is_array($currentLevel[$part])) {
-            return "Error: Invalid current directory path.\n";
+    // Resolve full source and target paths
+    $sourcePath = $resolvePath($currentDirectory, $oldname);
+    $targetPath = $resolvePath($currentDirectory, $newname);
+
+    // Navigate to source directory
+    $sourceDir = dirname($sourcePath);
+    $sourceName = basename($sourcePath);
+    $sourceParts = array_filter(explode('/', trim($sourceDir, '/')), 'strlen');
+    $sourceLevel = &$filesystem['/'];
+    foreach ($sourceParts as $part) {
+        if (!array_key_exists($part, $sourceLevel) || !is_array($sourceLevel[$part])) {
+            return "Error: Source path invalid.";
         }
-        $currentLevel = &$currentLevel[$part];
+        $sourceLevel = &$sourceLevel[$part];
     }
 
-    // Check if the old item exists
-    if (!isset($currentLevel[$oldname])) {
-        return "Error: '$oldname' not found.\n";
+    // Check if source exists
+    if (!array_key_exists($sourceName, $sourceLevel)) {
+        return "Error: '$oldname' not found.";
     }
 
-    // Resolve newname to target directory and target name
-    list($targetDir, $targetName) = $resolveNewnamePath($currentDirectory, $newname);
-    if ($targetName === '') {
-        $targetName = $oldname;
-    }
-
-    // Navigate to the initial target directory
-    $targetPathParts = array_filter(explode('/', trim($targetDir, '/')), 'strlen');
+    // Navigate to target directory
+    $targetDir = dirname($targetPath);
+    $targetName = basename($targetPath);
+    $targetParts = array_filter(explode('/', trim($targetDir, '/')), 'strlen');
     $targetLevel = &$filesystem['/'];
-    foreach ($targetPathParts as $part) {
-        if (!isset($targetLevel[$part]) || !is_array($targetLevel[$part])) {
-            return "Error: Target directory '$targetDir' does not exist.\n";
+    foreach ($targetParts as $part) {
+        if (!array_key_exists($part, $targetLevel) || !is_array($targetLevel[$part])) {
+            return "Error: Target directory does not exist.";
         }
         $targetLevel = &$targetLevel[$part];
     }
 
-    // Check if the target name is an existing directory (determines if we're moving into it)
-    $isMoveToDirectory = isset($targetLevel[$targetName]) && is_array($targetLevel[$targetName]);
-
-    // Adjust target directory and name if moving into an existing directory
-    if ($isMoveToDirectory) {
-        $targetDir = rtrim($targetDir, '/') . '/' . $targetName;
-        $targetName = $oldname;
-        // Re-navigate to the adjusted target directory
-        $adjustedTargetPathParts = array_filter(explode('/', trim($targetDir, '/')), 'strlen');
-        $targetLevel = &$filesystem['/'];
-        foreach ($adjustedTargetPathParts as $part) {
-            if (!isset($targetLevel[$part]) || !is_array($targetLevel[$part])) {
-                return "Error: Adjusted target directory '$targetDir' does not exist.\n";
-            }
-            $targetLevel = &$targetLevel[$part];
-        }
+    // If target is a directory, append source name (e.g., mv file.txt dir/)
+    if (array_key_exists($targetName, $targetLevel) && is_array($targetLevel[$targetName])) {
+        $targetLevel = &$targetLevel[$targetName];
+        $targetName = $sourceName;
     }
 
-    // Check if target name already exists in the target directory
-    if (isset($targetLevel[$targetName])) {
-        return "Error: '$targetName' already exists in target directory.\n";
+    // Check for conflicts
+    if (array_key_exists($targetName, $targetLevel)) {
+        return "Error: '$targetName' already exists.";
     }
 
-    // Perform the move or rename
-    $targetLevel[$targetName] = $currentLevel[$oldname];
-    unset($currentLevel[$oldname]);
+    // Perform the move/rename
+    $targetLevel[$targetName] = $sourceLevel[$sourceName];
+    unset($sourceLevel[$sourceName]);
 
-    return "";
+    return "Successfully moved '$oldname' to '$newname'.";
 }
+
 
 function process_refresh() : string {
     // Reinitialize session variables to restore the default file system
