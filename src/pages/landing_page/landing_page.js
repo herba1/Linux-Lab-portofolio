@@ -1,27 +1,23 @@
 import { Navigation } from "../../components/Navigation/index.js";
 import { Footer } from "../../components/Footer/index.js";
 
+// Initialize navigation and footer
 const navigation = new Navigation('.navigation__container');
 const footer = new Footer('.footer__container');
 
-async function AuthCheck(){
-    try{
-        const response = await fetch('../../user/user.php');
-        if(!response.ok){
-            throw new Error('Fail fetching auth info');
-        }
-        const data = await response.json()
-        console.log(data);
-        if(data.isLoggedIn){
-            document.querySelector('.navigation__container').replaceChildren();
-            const navigation = new Navigation('.navigation__container',data.isLoggedIn,data);
-        }
-        else{
-            return;
-        }
+// Mock user data for presentation
+const mockUserData = {
+    isLoggedIn: false,
+    username: 'guest'
+};
+
+// Initialize the page
+document.addEventListener('DOMContentLoaded', () => {
+    // Allow button to work without authentication
+    const getStartedButton = document.querySelector('.hero__button');
+    if (getStartedButton) {
+        getStartedButton.addEventListener('click', () => {
+            window.location.href = '../login/login.html';
+        });
     }
-    catch(error){
-        console.error(error);
-    }
-}
-AuthCheck();
+});

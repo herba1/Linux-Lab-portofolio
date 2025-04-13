@@ -25,28 +25,24 @@ function showLogin(){
 function showSignup(){
     loginSection.classList.add('hidden');
     signupSection.classList.remove('hidden');
-
 }
 
-
-async function AuthCheck(){
-    try{
-        const response = await fetch('../../user/user.php');
-        if(!response.ok){
-            throw new Error('Fail fetching auth info');
-        }
-        const data = await response.json()
-        console.log(data);
-        if(data.isLoggedIn){
-            window.location.href = `../../pages/dashboard/dashboard.html`;
-        }
-        else{
-            return;
-        }
-    }
-    catch(error){
-        console.error(error);
-    }
-}
-
-AuthCheck();
+// No authentication check needed for static site
+// Adding event listeners for buttons
+document.addEventListener('DOMContentLoaded', () => {
+    const loginButton = document.querySelector('.auth__form--login .styled-button');
+    const signupButton = document.querySelector('.auth__form--signup .styled-button');
+    const resetButton = document.querySelector('.auth__forgot');
+    
+    loginButton.addEventListener('click', () => {
+        window.location.href = '../dashboard/dashboard.html';
+    });
+    
+    signupButton.addEventListener('click', () => {
+        window.location.href = '../dashboard/dashboard.html';
+    });
+    
+    resetButton.addEventListener('click', () => {
+        alert('Password reset is not available in this static demo.');
+    });
+});

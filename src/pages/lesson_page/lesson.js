@@ -12,7 +12,6 @@ class LessonManager {
   constructor() {
     this.lesson = 1;
     this.currentSection = "basics";
-    // may change this later to identify user
     this.setupListeners();
     this.user = 0;
     this.fetchUserInfoInit();
@@ -22,39 +21,26 @@ class LessonManager {
     document.addEventListener("section:update", this.handleLessonSectionChange);
     document.addEventListener("completed:update", this.handleLessonCompleted);
   }
-  handleLessonCompleted = async () => {
-    // update our user completed json
-        this.lessons[this.currentSection][this.lesson].completed = true;
-    try {
-      const response = await fetch("../../testAPI/updateLessonCompleted.php", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-        body: JSON.stringify({
-          section: this.currentSection,
-          lesson: this.lesson,
-          completed: true,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`response error`, response.status);
-      }
-      this.fetchUserInfo();
-    } catch (error) {
-      console.log(`error completing ${error}`);
-    }
+  
+  handleLessonCompleted = () => {
+    // Update our user completed json in memory
+    this.lessons[this.currentSection][this.lesson].completed = true;
+    // Broadcast update to UI
+    this.broadcastUpdate();
   };
 
   async fetchUserInfoInit() {
     try {
-      const request = await fetch("../../testAPI/userInfo.json");
-      if (!request.ok) {
-        throw new Error("Could not load user info");
-      }
-      const data = await request.json();
-      this.lesson = data[this.user]["lesson"];
-      this.currentSection = data[this.user]["section"];
+      // Static mock data for user info
+      const mockUserData = {
+        0: {
+          "lesson": 1,
+          "section": "basics"
+        }
+      };
+      
+      this.lesson = mockUserData[this.user]["lesson"];
+      this.currentSection = mockUserData[this.user]["section"];
       this.fetchLessonsInit();
     } catch (error) {
       console.error(error);
@@ -63,13 +49,7 @@ class LessonManager {
 
   async fetchUserInfo() {
     try {
-      const request = await fetch("../../testAPI/userInfo.json");
-      if (!request.ok) {
-        throw new Error("Could not load user info");
-      }
-      const data = await request.json();
-      this.lesson = data[this.user]["lesson"];
-      this.currentSection = data[this.user]["section"];
+      // For static site, just update UI with current values
       this.broadcastUpdate();
     } catch (error) {
       console.error(error);
@@ -78,6 +58,7 @@ class LessonManager {
 
   async fetchLessonsInit() {
     try {
+      // Fetch the lessons.json for static site
       const request = await fetch("../../testAPI/lessons.json");
       if (!request.ok) {
         throw new Error(`could not get lessons ${request.status}`);
@@ -105,7 +86,7 @@ class LessonManager {
   }
 
   // handle lesson and section changes bundled
-  handleLessonSectionChange = async (e) => {
+  handleLessonSectionChange = (e) => {
     let { section, lessonId, action } = e.detail;
     if (action === "next") {
       // if we are at last lesson or beyond lesson scope
@@ -128,31 +109,11 @@ class LessonManager {
         lessonId = this.lessons[section][0].section__size;
     }
 
-    // update our user info json
-    try {
-      const response = await fetch("../../testAPI/updateUserInfo.php", {
-        method: "POST",
-        headers: {
-          "Content-type": "application/json",
-        },
-        body: JSON.stringify({
-          section: section,
-          lesson: lessonId,
-        }),
-      });
-      if (!response.ok) {
-        throw new Error(`response error`, response.status);
-      }
-      this.fetchUserInfo();
-    } catch (error) {
-      console.log(`error saving ${error}`);
-    }
+    // Update locally for static site
+    this.lesson = lessonId;
+    this.currentSection = section;
+    this.fetchUserInfo();
   };
-
-  eventNewInfo(data) {
-    const eventNewInfo = new CustomEvent("userinfo:update", { detail: {} });
-    dispatchEvent(eventNewInfo);
-  }
 }
 
 class LessonNav {
@@ -190,8 +151,6 @@ class LessonNav {
       new CustomEvent("section:update", {
         detail: {
           lessonId: id,
-          // this is temporary as i will have to add more info to list elements
-          // shoudl be the section belonging to that list element
           section: "basics",
           action: "change",
         },
@@ -280,7 +239,6 @@ class lessonDisplay {
   initListeners() {
     this.nextButton.addEventListener("click", this.nextLesson);
     this.prevButton.addEventListener("click", this.prevLesson);
-    // this.misc.addEventListener("click", this.toggleLessonComplete);
     document.addEventListener("command-success", this.handleCorrectEvent);
   }
 
@@ -367,7 +325,6 @@ class lessonDisplay {
   };
 
   nextLesson = () => {
-    // if (this.curLesson >= this.sectionSize) return;
     ++this.curLesson;
     document.dispatchEvent(
       new CustomEvent("section:update", {
@@ -478,11 +435,11 @@ class lessonDisplay {
     }, 1000 * 3);
   }
 }
-const lessonManager = new LessonManager();
 
+const lessonManager = new LessonManager();
 const lessonDisplayController = new lessonDisplay(".lesson");
 const terminal = new VanillaTerminal({
-  apiEndpoint: "../../../api_commands.php",
+  apiEndpoint: "../../../api_commands.php", // No longer used, but kept for compatibility
 });
 
 const lessonNav = new LessonNav();

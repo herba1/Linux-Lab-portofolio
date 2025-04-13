@@ -129,41 +129,124 @@ export default class VanillaTerminal {
       this.commandHistoryIndex = this.commandHistory.length - 1;
     }
 
-    // Send the command to the backend API
-    fetch(this.options.apiEndpoint, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: `command=${encodeURIComponent(commandToSend)}`,
-    })
-    .then(response => response.json())
-    
-    .then(data => {
-      console.log(data);
-      this.output(actualPrevCommand, data.output);
-      this.updatePrompt(data.currentDirectory);
+    // Process command locally instead of sending to server
+    this.processCommand(actualPrevCommand, commandToSend);
+  }
 
-      if(data.commandSuccess) {
-        const successEvent = new CustomEvent('command-success', {
-          // detail object 
-          detail:{
-            command: commandToSend,
-            output: data.output
-          }
-        });
-        document.dispatchEvent(successEvent);
-      }
-      this.temp = "";
-      this.caretPos = 0;
-      this.renderCaret();
-    })
+  processCommand(actualPrevCommand, commandToSend) {
+    // Mock response data
+    const mockResponse = {
+      output: this.getMockResponse(commandToSend),
+      currentDirectory: this.getCurrentDirectory(commandToSend),
+      commandSuccess: this.checkCommandSuccess(commandToSend)
+    };
     
-    .catch(error => {
-      console.error('Error:', error);
-      // Handle error gracefully - maybe output to terminal
-      this.output(actualPrevCommand, `Error: Could not process command`);
-    });
+    this.output(actualPrevCommand, mockResponse.output);
+    this.updatePrompt(mockResponse.currentDirectory);
+
+    if (mockResponse.commandSuccess) {
+      const successEvent = new CustomEvent('command-success', {
+        detail: {
+          command: commandToSend,
+          output: mockResponse.output
+        }
+      });
+      document.dispatchEvent(successEvent);
+    }
+    
+    this.temp = "";
+    this.caretPos = 0;
+    this.renderCaret();
+  }
+
+  getMockResponse(command) {
+    // Simple command parsing for static demo
+    const parts = command.split(' ');
+    const cmd = parts[0];
+    const args = parts.slice(1).join(' ');
+    
+    // Basic mock responses
+    const mockResponses = {
+      'ls': 'Documents/ Pictures/ Projects/ Videos/',
+      'pwd': this.currentDirectory,
+      'cd': '',
+      'echo': args,
+      'cat': 'This is a mockup file content for demonstration purposes.',
+      'date': new Date().toString(),
+      'clear': '',
+      'help': 'Available commands: ls, pwd, cd, echo, cat, date, clear, help',
+      'man': 'Manual page for ' + args + ' - Static demonstration only',
+      'mkdir': 'Created directory: ' + args,
+      'touch': 'Created file: ' + args,
+      'rm': 'Removed: ' + args,
+      'cp': 'Copied file',
+      'mv': 'Moved file'
+    };
+    
+    return mockResponses[cmd] || `Command not found: ${cmd}`;
+  }
+  
+  getCurrentDirectory(command) {
+    // Handle directory changes for cd command
+    if (command.startsWith('cd ')) {
+      const path = command.substring(3);
+      if (path === '..') {
+        if (this.currentDirectory === '/') {
+          return '/';
+        }
+        const parts = this.currentDirectory.split('/').filter(Boolean);
+        parts.pop();
+        return '/' + parts.join('/');
+      } else if (path.startsWith('/')) {
+        return path;
+      } else {
+        return this.currentDirectory === '/' 
+          ? '/' + path 
+          : this.currentDirectory + '/' + path;
+      }
+    }
+    
+    return this.currentDirectory;
+  }
+  
+  checkCommandSuccess(command) {
+    // Check if the command matches the correct answer for the current lesson
+    const lessonInfo = this.getLessonInfo();
+    if (lessonInfo && lessonInfo.answer === command) {
+      return true;
+    }
+    return false;
+  }
+  
+  getLessonInfo() {
+    // Try to get lesson information from the DOM
+    // This is a simplified approach - in a real app you'd use a more robust method
+    try {
+      const lessonElement = document.querySelector('.lesson');
+      if (!lessonElement) return null;
+      
+      // This is a simplification - in your real app you'd have a way to get the current lesson data
+      // For demo purposes, we'll just check for common commands
+      const content = lessonElement.textContent;
+      
+      // Very basic detection - would need to be improved for real use
+      if (content.includes('echo')) {
+        return { answer: 'echo Hello World' };
+      } else if (content.includes('pwd')) {
+        return { answer: 'pwd' };
+      } else if (content.includes('ls')) {
+        return { answer: 'ls' };
+      } else if (content.includes('cd')) {
+        return { answer: 'cd Documents/' };
+      } else if (content.includes('cat')) {
+        return { answer: 'cat hello.txt' };
+      }
+      
+      return null;
+    } catch (error) {
+      console.error('Error getting lesson info:', error);
+      return null;
+    }
   }
 
   output(command, result) {

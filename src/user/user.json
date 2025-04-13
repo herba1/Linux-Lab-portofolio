@@ -1,0 +1,26 @@
+{
+  "isLoggedIn": true,
+  "username": "demo_user",
+  "currentModule": {
+    "name": "The Basics",
+    "lessonId": 3,
+    "lessonName": "cat"
+  },
+  "modules": [
+    {
+      "name": "The Basics",
+      "completed": 13,
+      "total": 21
+    },
+    {
+      "name": "Networking",
+      "completed": 18,
+      "total": 21
+    },
+    {
+      "name": "Advanced Topics",
+      "completed": 1,
+      "total": 17
+    }
+  ]
+}
