@@ -1,5 +1,7 @@
 # Frontend Portfolio - Linux Lab Project
 My Code for this project can be found in here, [Code](https://github.com/rene2412/Linux-Lab/tree/main/src) I have handled the Front-end for this project.
+[live static](https://herba1.github.io/Linux-Lab-portofolio/src/pages/landing_page/landing_page.html)
+To use this live static in progress version as we put it on the cloud you can click 'get started' in the landing page and then click 'login' to access the dashboard thanks! 
 
 ## Project Overview
 Linux Lab is an educational web application designed to teach users Linux command line skills through an interactive, browser-based environment. As the frontend developer for this project, I implemented the entire user interface and interactive components that make this learning platform engaging and effective. This is an ongoing project with active development and improvements being made regularly.
